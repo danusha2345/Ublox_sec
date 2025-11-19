@@ -24,8 +24,8 @@
 
 1.  Склонируйте репозиторий:
     ```bash
-    git clone https://github.com/ВАШ_НИК/ubx_audit.git
-    cd ubx_audit
+    git clone https://github.com/danusha2345/Ublox_sec.git
+    cd Ublox_sec
     ```
 
 2.  Соберите проект (рекомендуется release-режим для скорости):
