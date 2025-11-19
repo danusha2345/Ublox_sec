@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::{self, File};
+use std::fs;
 use std::path::Path;
 use std::collections::HashMap;
 use std::error::Error;
@@ -8,8 +8,9 @@ use rayon::prelude::*;
 use colored::*;
 use rand::Rng;
 use num_bigint::{BigInt, Sign};
-use num_traits::{Num, One, Zero};
+use num_traits::{Num, Zero};
 use plotters::prelude::*;
+use plotters::style::Color;
 
 // =========================================================
 // 1. КОНФИГУРАЦИЯ
@@ -134,6 +135,12 @@ struct CaptureRow {
 // =========================================================
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // Настройка пула потоков rayon с увеличенным стеком (8 МБ) для предотвращения Stack Overflow
+    rayon::ThreadPoolBuilder::new()
+        .stack_size(8 * 1024 * 1024)
+        .build_global()
+        .unwrap();
+
     let args: Vec<String> = env::args().collect();
     
     println!("{}", "=================================================".green());
@@ -330,7 +337,7 @@ fn draw_bit_bias(filename: &str, title: &str, counts: &[u64], total: u64) -> Res
         counts.iter().enumerate().map(|(i, &c)| (i as u32, c as f64 / total as f64)),
         2,
         &BLUE,
-        &|c, s, st| {
+        &|c, s, _st| {
             let color = if (c.1 - 0.5).abs() > 0.1 { &RED } else { &BLUE };
             return EmptyElement::at(c) + Circle::new((0,0), s, color.filled());
         },
@@ -389,14 +396,18 @@ fn check_duplicates(signatures: &[SignatureData]) {
     for (_, sigs) in r_map {
         if sigs.len() > 1 {
             // Проверка, что это разные подписи (S отличается), но R одинаковый
-            if sigs[0].s != sigs[1].s {
-                println!("{}", "!!! КРИТИЧЕСКАЯ УЯЗВИМОСТЬ: НАЙДЕН ДУБЛИКАТ R !!!".red().bold().blink());
-                println!("Packet Index 1: {}", sigs[0].packet_idx);
-                println!("Packet Index 2: {}", sigs[1].packet_idx);
-                println!("R: {}", hex::encode(&sigs[0].r_bytes));
-                found = true;
-                break;
+            let first_s = &sigs[0].s;
+            for i in 1..sigs.len() {
+                if &sigs[i].s != first_s {
+                    println!("{}", "!!! КРИТИЧЕСКАЯ УЯЗВИМОСТЬ: НАЙДЕН ДУБЛИКАТ R !!!".red().bold().blink());
+                    println!("Packet Index 1: {}", sigs[0].packet_idx);
+                    println!("Packet Index 2: {}", sigs[i].packet_idx);
+                    println!("R: {}", hex::encode(&sigs[0].r_bytes));
+                    found = true;
+                    break;
+                }
             }
+            if found { break; }
         }
     }
     if !found {
