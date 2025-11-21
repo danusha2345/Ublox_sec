@@ -18,10 +18,10 @@ use plotters::style::Color;
 const UBX_SYNC_1: u8 = 0xB5;
 const UBX_SYNC_2: u8 = 0x62;
 const CLASS_SEC: u8 = 0x27; // Класс сообщений безопасности u-blox
-const SIG_LEN: usize = 64;  // Длина подписи (32 байта R + 32 байта S)
+const SIG_LEN: usize = 48;  // Длина подписи SECP192R1 (24 байта R + 24 байта S)
 
-// Порядок группы кривой secp256r1 (NIST P-256)
-const SECP256R1_ORDER_HEX: &str = "FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551";
+// Порядок группы кривой secp192r1 (NIST P-192)
+const SECP192R1_ORDER_HEX: &str = "FFFFFFFFFFFFFFFFFFFFFFFF99DEF836146BC9B1B4D22831";
 
 // =========================================================
 // 2. СТРУКТУРЫ ДАННЫХ
@@ -170,7 +170,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // 3. Анализ
     println!("Запуск многопоточного анализа...");
-    let order = BigInt::from_str_radix(SECP256R1_ORDER_HEX, 16).unwrap();
+    let order = BigInt::from_str_radix(SECP192R1_ORDER_HEX, 16).unwrap();
     let order_half = &order / 2;
 
     let stats = signatures.par_iter()
@@ -223,11 +223,11 @@ fn extract_signatures(data: &[u8]) -> Vec<SignatureData> {
                 let payload_start = i + 6;
                 let payload = &data[payload_start..payload_start+len];
 
-                // Эвристика: Подпись (64 байта) обычно находится в самом конце payload
+                // Эвристика: Подпись (48 байт для SECP192R1) обычно находится в самом конце payload
                 let sig_start = len - SIG_LEN;
                 
-                let r_bytes = payload[sig_start..sig_start+32].to_vec();
-                let s_bytes = payload[sig_start+32..sig_start+64].to_vec();
+                let r_bytes = payload[sig_start..sig_start+24].to_vec();
+                let s_bytes = payload[sig_start+24..sig_start+48].to_vec();
 
                 sigs.push(SignatureData {
                     r: BigInt::from_bytes_be(Sign::Plus, &r_bytes),
