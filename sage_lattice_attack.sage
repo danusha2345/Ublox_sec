@@ -43,7 +43,18 @@ def fold_sha256_to_192(sha256_hash):
 print('Загрузка подписей...')
 all_sigs = []
 
-if os.path.exists('sigs_new.csv'):
+if os.path.exists('sigs_combined.csv'):
+    print("Загрузка из sigs_combined.csv...")
+    with open('sigs_combined.csv', 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            r = Integer(int(row['r']))
+            s = Integer(int(row['s']))
+            z = Integer(int(row['z']))
+            all_sigs.append({
+                'r': r, 's': s, 'z': z, 'r_bits': r.nbits()
+            })
+elif os.path.exists('sigs_new.csv'):
     print("Загрузка из sigs_new.csv...")
     with open('sigs_new.csv', 'r') as f:
         reader = csv.DictReader(f)
@@ -207,6 +218,21 @@ if not found:
     print('\nBKZ-20 не нашел решение. Запускаем BKZ (Block Size 30)...')
     M_bkz30 = M.BKZ(block_size=30)
     found = check_matrix(M_bkz30, "BKZ-30")
+
+if not found:
+    print('\nBKZ-30 не нашел решение. Запускаем BKZ (Block Size 40)...')
+    M_bkz40 = M.BKZ(block_size=40)
+    found = check_matrix(M_bkz40, "BKZ-40")
+
+if not found:
+    print('\nBKZ-40 не нашел решение. Запускаем BKZ (Block Size 50)...')
+    M_bkz50 = M.BKZ(block_size=50)
+    found = check_matrix(M_bkz50, "BKZ-50")
+
+if not found:
+    print('\nBKZ-50 не нашел решение. Запускаем BKZ (Block Size 60) - ЭТО МОЖЕТ БЫТЬ ДОЛГО...')
+    M_bkz60 = M.BKZ(block_size=60)
+    found = check_matrix(M_bkz60, "BKZ-60")
 
 if found:
     print(f'\n{"="*60}')

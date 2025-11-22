@@ -68,6 +68,13 @@ def analyze_and_plot_fft(values, name, filename_suffix, n_bins=256):
     
     plt.legend()
     
+    # Вывод пиков
+    indices = np.argsort(power)[::-1]
+    print(f"Top 3 Peaks for {name}:")
+    for i in range(3):
+        idx = indices[i]
+        print(f"  Freq: {xf[idx]:.4f}, Power: {power[idx]:.4f} (Threshold: {threshold:.4f})")
+        
     # Сохранение
     output_file = f'plots/fft_spectrum_{filename_suffix}.png'
     plt.savefig(output_file, dpi=150)
@@ -76,7 +83,9 @@ def analyze_and_plot_fft(values, name, filename_suffix, n_bins=256):
 
 def main():
     print("Загрузка подписей...")
-    r_vals, s_vals = load_signatures('sigs_new.csv')
+    filename = 'sigs_combined.csv' if os.path.exists('sigs_combined.csv') else 'sigs_new.csv'
+    print(f"Используем файл: {filename}")
+    r_vals, s_vals = load_signatures(filename)
     
     # Создаем папку для графиков если нужно
     if not os.path.exists('plots'):

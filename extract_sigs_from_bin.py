@@ -13,9 +13,15 @@ def fold_sha256_to_192(sha256_hash):
         h[i] ^= h[i + 24]
     return bytes(h[:24])
 
+import sys
+
 def main():
-    input_file = 'logs_combined.bin'
-    output_file = 'sigs_combined.csv'
+    if len(sys.argv) >= 3:
+        input_file = sys.argv[1]
+        output_file = sys.argv[2]
+    else:
+        input_file = 'logs_combined.bin'
+        output_file = 'sigs_combined.csv'
     
     if not os.path.exists(input_file):
         print(f"File {input_file} not found!")
